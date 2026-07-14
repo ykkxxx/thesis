@@ -95,9 +95,22 @@ def train():
     
     # 4. 定义优化器和损失函数
     optimizer = torch.optim.AdamW(trainable_params, lr=1e-4, weight_decay=1e-5)
-    criterion = nn.CrossEntropyLoss()
+    # 基于【实例数】计算的科学权重 (对应你刚才跑出的 8 类顺序)
+    # 样本最少的 bottom_shrinkage_crack (1个实例) 和 shrinkage_crack (4个实例) 给予极高关注
+    class_weights = torch.tensor([
+        100.0,  # bottom_shrinkage_crack (1)
+        1.7,    # concrete_void (460)
+        1.0,    # corrosion (763)
+        4.2,    # crack (189)
+        2.3,    # degraded_concrete (343)
+        1.0,    # moist (805)
+        80.0,   # pavement_deterioration (9)
+        150.0   # shrinkage_crack (4)
+    ]).to(device)   
+    # 使用加权交叉熵损失函数
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
 
-    epochs = 10
+    epochs = 30
     best_f1 = 0.0
 
     print("\n开始训练...")
